@@ -24,9 +24,10 @@ PKG_NAME=update-route53-ip
 # fi
 
 echo "Creating service account"
-getent passwd updateroute53ipsa > /dev/null || (useradd -r -s /bin/false updateroute53ipsa && sudo usermod -d /opt/update-route53-ip updateroute53ipsa)
+getent passwd updateroute53ipsa > /dev/null || useradd -r -s /usr/sbin/nologin updateroute53ipsa
 
 config_path="/opt/${PKG_NAME}/config"
+
 echo "Populating ${config_path}"
 read -s -p "Enter the aws secret access key (the long string): " aws_key
 echo ""
@@ -39,6 +40,7 @@ sed -i "s/~AWS_KEY~/${aws_key}/g" ${config_path}
 sed -i "s/~AWS_KEY_ID~/${aws_key_id}/g" ${config_path}
 sed -i "s/~HOSTED_ZONE_ID~/${hosted_zone_id}/g" ${config_path}
 sed -i "s/~DOMAIN_NAME~/${domain_name}/g" ${config_path}
+
 chmod 0640 ${config_path}
 chgrp updateroute53ipsa ${config_path}
 chgrp -R updateroute53ipsa /opt/${PKG_NAME}
