@@ -1,0 +1,18 @@
+[update-route53-ip]
+
+# The aws secret access key (the long string):
+aws_key = ~AWS_KEY~
+
+# The aws key_id (the short string):
+aws_key_id = ~AWS_KEY_ID~
+
+# This is an all caps string with numbers you'll find in aws's route53 (or tf)
+hosted_zone_id = ~HOSTED_ZONE_ID~
+
+# This is the record that will be updated with the local system's current IP
+domain_name = ~DOMAIN_NAME~
+
+# This is the record_type, haven't tested any other types
+record_type = A
+
+ip_lookup_url = https://api.ipify.org
