@@ -5,6 +5,9 @@ PKG_NAME=update-route53-ip
 VERSION=1.0.0
 
 # Install python depencencies into venv/
+# This is intentionally commented out because I need to build a deb that works
+# on both arm and x86_64 and python probably has some compiled binaries in these deps
+#
 # python -m venv venv
 # source venv/bin/activate
 # pip install -r requirements.txt
@@ -12,21 +15,20 @@ VERSION=1.0.0
 
 # brew install gnu-tar
 # FPM needs gnu-tar or it fails, maybe I should containerize it?
-export PATH="/usr/local/opt/gnu-tar/libexec/gnubin:$PATH"
+rm "${PKG_NAME}_${VERSION}_all.deb"
 
 # Build the package
 fpm -s dir -t deb -n ${PKG_NAME} -v ${VERSION} \
-    -a amd64 \
+    -a all \
     --description "Update Route53 IP service" \
     --prefix /opt/${PKG_NAME} \
-    --depends python3-venv \
-    --depends python3-pip \
+    --depends python3-boto3 \
+    --depends python3-requests \
     --after-install packaging/postinst.sh \
     --before-remove packaging/prerm.sh \
-    --config-files /etc/${PKG_NAME}/config \
-    ./venv \
+    --config-files packaging/config \
     ./update_route53_ip.py \
     ./systemd/${PKG_NAME}.service \
-    ./packaging/config
-    # --chdir path/to/your/project \
-    # -a armhf \
+    ./packaging/config=config
+
+    # ./venv \

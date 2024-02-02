@@ -16,8 +16,8 @@ def update_route53_record(config, new_ip):
     """Update the Route 53 record."""
     client = boto3.client(
         'route53',
-        aws_access_key_id=config['key_id'],
-        aws_secret_access_key=config['key']
+        aws_access_key_id=config['aws_key_id'],
+        aws_secret_access_key=config['aws_key']
     )
     response = client.change_resource_record_sets(
         HostedZoneId=config['hosted_zone_id'],
@@ -79,11 +79,5 @@ def pretty_path(path):
     return pretty_config_path
 
 if __name__ == '__main__':
-    config = read_configs()
-
-    # Call the monitor function
-    # monitor_ip_change(config, interval=300)
-
-    # debug
-    print("the service booted correctly.")
-    time.sleep(30)
+    config = read_configs("/opt/update-route53-ip/config")
+    monitor_ip_change(config, interval=300)

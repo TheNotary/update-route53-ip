@@ -3,9 +3,10 @@ Description=Update Route53 IP Service
 After=network.target
 
 [Service]
-User=USERNAME
-WorkingDirectory=/home/USERNAME/dev/update_route53_ip
-ExecStart=/bin/bash -c 'source /home/USERNAME/dev/update_route53_ip/.venv/bin/activate && exec python update_route53_ip.py'
+User=updateroute53ipsa
+WorkingDirectory=/opt/update-route53-ip
+#ExecStart=/bin/bash -c 'source /opt/update-route53-ip/venv/bin/activate && exec python update_route53_ip.py'
+ExecStart=python update_route53_ip.py
 Restart=always
 
 [Install]
