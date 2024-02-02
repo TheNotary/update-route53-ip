@@ -12,6 +12,18 @@ def get_external_ip(config):
     response = requests.get(url)
     return response.text
 
+def is_invalid_ip(ip):
+    cider_things = ip.split('.')
+    if len(cider_things) != 4:
+        return True
+
+    # check that all the numbers separated by '.'s have at least one number, and no more than 3
+    for x in cider_things:
+        if len(x) < 1 or len(x) > 3:
+            return True
+
+    return False
+
 def update_route53_record(config, new_ip):
     """Update the Route 53 record."""
     client = boto3.client(
@@ -43,9 +55,14 @@ def monitor_ip_change(config, interval):
     current_ip = None
     while True:
         new_ip = get_external_ip(config)
+        if is_invalid_ip(new_ip):
+            print(f"Recieved invalid ip from lookup url.  [{new_ip}].  Waiting to retry...")
+            time.sleep(interval * 2)
+            continue
+
         if new_ip != current_ip:
             response = update_route53_record(config, new_ip)
-            print(f"Updated IP address in Route 53: {response}")
+            print(f"Updated IP address in Route 53 to {new_ip}: {response}")
             current_ip = new_ip
         time.sleep(interval)
 
