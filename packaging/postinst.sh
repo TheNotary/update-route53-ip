@@ -24,7 +24,7 @@ PKG_NAME=update-route53-ip
 # fi
 
 echo "Creating service account"
-getent passwd updateroute53ipsa > /dev/null || useradd -r -s /bin/false updateroute53ipsa
+getent passwd updateroute53ipsa > /dev/null || (useradd -r -s /bin/false updateroute53ipsa && sudo usermod -d /opt/update-route53-ip updateroute53ipsa)
 
 config_path="/opt/${PKG_NAME}/config"
 echo "Populating ${config_path}"
@@ -41,6 +41,7 @@ sed -i "s/~HOSTED_ZONE_ID~/${hosted_zone_id}/g" ${config_path}
 sed -i "s/~DOMAIN_NAME~/${domain_name}/g" ${config_path}
 chmod 0640 ${config_path}
 chgrp updateroute53ipsa ${config_path}
+chgrp -R updateroute53ipsa /opt/${PKG_NAME}
 
 # Link, enable and start the systemd service
 ln -s /opt/${PKG_NAME}/systemd/${PKG_NAME}.service /etc/systemd/system/${PKG_NAME}.service
@@ -49,8 +50,9 @@ systemctl enable update-route53-ip.service
 systemctl start update-route53-ip.service
 
 echo ""
+echo "Congratulations!"
 echo "update-route53-ip service should now be running."
-echo "To verify it's running and not in a reboot loop, run:"
-echo "  systemctl status update-route53-ip.service"
-echo "To view the logs, run:"
-echo "  journalctl -u update-route53-ip.service"
+echo "  To verify it's running and not in a reboot loop, run:"
+echo "systemctl status update-route53-ip.service"
+echo "  To view the logs, run:"
+echo "journalctl -u update-route53-ip.service"
