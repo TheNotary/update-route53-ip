@@ -10,7 +10,7 @@ setup(
     install_requires=['boto3', 'requests'],
     entry_points={
         'console_scripts': [
-            'update-route53-ip=update_route53_ip:main',
+            'update-route53-ip=main:main',
         ],
     },
 )

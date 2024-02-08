@@ -27,8 +27,8 @@ fpm -s dir -t deb -n ${PKG_NAME} -v ${VERSION} \
     --after-install packaging/postinst.sh \
     --before-remove packaging/prerm.sh \
     --config-files packaging/config \
-    ./update_route53_ip.py \
+    ./python/ \
     ./systemd/${PKG_NAME}.service \
-    ./packaging/config=config
+    ./packaging/config_template=config
 
     # ./venv \

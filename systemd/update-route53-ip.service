@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=updateroute53ipsa
 WorkingDirectory=/opt/update-route53-ip
-ExecStart=/usr/bin/python3 -u /opt/update-route53-ip/update_route53_ip.py
+ExecStart=/usr/bin/python3 -u /opt/update-route53-ip/python/main.py
 Restart=always
 #ExecStart=/bin/bash -c 'source /opt/update-route53-ip/venv/bin/activate && exec python update_route53_ip.py'
 
