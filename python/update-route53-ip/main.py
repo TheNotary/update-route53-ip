@@ -15,20 +15,23 @@ class IpMonitor():
         print("Monitoring IP address for changes...")
         ip_lookup_client = IpLookupClient(self.config)
         while True:
-            if ip_lookup_client.check_ip_change():
-                if self.config['dry_run'] == 'true':
-                    print("INFO: IP Change detected as: ", ip_lookup_client.ip)
-                    print("INFO: dry_run was set, skipping.")
-                else:
-                    update_route53_record(self.config, ip_lookup_client.ip)
-            # if the IP address is changed outside of this program, the program
-            # won't know to overwrite the IP back to what it's meant to be
-            if self.__should_check_dns_directly() and self.__has_route53_record_changed_externally(ip_lookup_client.ip):
-                print(f"WARN: The domain {self.config['domain_name']} appears to have been modified outside of this system.  Overriding now.")
-                if self.config['dry_run'] == 'true':
-                    print("INFO: dry_run was set, skipping.")
-                else:
-                    update_route53_record(self.config, ip_lookup_client.ip)
+            try:
+                if ip_lookup_client.check_ip_change():
+                    if self.config['dry_run'] == 'true':
+                        print("INFO: IP Change detected as: ", ip_lookup_client.ip)
+                        print("INFO: dry_run was set, skipping.")
+                    else:
+                        update_route53_record(self.config, ip_lookup_client.ip)
+                # if the IP address is changed outside of this program, the program
+                # won't know to overwrite the IP back to what it's meant to be
+                if self.__should_check_dns_directly() and self.__has_route53_record_changed_externally(ip_lookup_client.ip):
+                    print(f"WARN: The domain {self.config['domain_name']} appears to have been modified outside of this system.  Overriding now.")
+                    if self.config['dry_run'] == 'true':
+                        print("INFO: dry_run was set, skipping.")
+                    else:
+                        update_route53_record(self.config, ip_lookup_client.ip)
+            except Exception as e:
+                print(f"ERROR: An exception was caught... {e}")
             time.sleep(self.interval)
 
     def __should_check_dns_directly(self):
@@ -45,6 +48,8 @@ class IpMonitor():
         return False
 
     def __has_route53_record_changed_externally(self, local_ip):
+        if local_ip == None: # if we have been unable to get a valid ip from the api, bail
+            return False
         registered_ip = resolve_domain_name(self.config)
         return local_ip != registered_ip
 

@@ -14,8 +14,8 @@ class IpLookupClient:
         returns the new ip address if the ip address has changed since the last
         time we checked.  Otherwise returns None if the ip address hasn't changed
         '''
-        new_ip = self.__get_external_ip()
-        if self.__is_malformed_ip(new_ip):
+        new_ip = self._get_external_ip()
+        if self._is_malformed_ip(new_ip):
             print(f"Error: Recieved invalid ip from lookup url.  [{new_ip}].  Waiting to retry...")
             return False
         if self.ip == new_ip:
@@ -23,13 +23,19 @@ class IpLookupClient:
         self.ip = new_ip
         return True
 
-    def __get_external_ip(self):
+    def _get_external_ip(self):
         """Get the external IP address."""
-        url = self.url
-        response = requests.get(url)
-        return response.text
+        try:
+            response = requests.get(self.url)
+            response.raise_for_status()
+            return response.text.strip()
+        except requests.RequestException as e:
+            print(f"ERROR: Something went wrong trying to get our ip from {self.url}, {e}")
+            return None
 
-    def __is_malformed_ip(self, ip):
+    def _is_malformed_ip(self, ip):
+        if ip == None:
+            return True
         cider_things = ip.split('.')
         if len(cider_things) != 4:
             return True
