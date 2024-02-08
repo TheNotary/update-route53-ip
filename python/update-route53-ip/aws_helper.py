@@ -2,6 +2,9 @@ import boto3
 
 def update_route53_record(config, ip):
     """Update the Route 53 record."""
+    if config['dry_run'] == 'true':
+        print("INFO: dry_run was set, skipping update_route53_record.")
+        return
     client = _get_client(config)
     response = client.change_resource_record_sets(
         HostedZoneId=config['hosted_zone_id'],
@@ -22,6 +25,9 @@ def update_route53_record(config, ip):
 
 
 def resolve_domain_name(config):
+    if config['dry_run'] == 'true':
+        print("INFO: dry_run was set, skipping resolve_domain_name.")
+        return
     client = _get_client(config)
     response = client.list_resource_record_sets(
         HostedZoneId=config['hosted_zone_id'],
