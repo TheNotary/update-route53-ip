@@ -16,3 +16,6 @@ domain_name = ~DOMAIN_NAME~
 record_type = A
 
 ip_lookup_url = https://api.ipify.org
+
+# This is for development purposes, if set to true aws APIs will not be used
+dry_run = false
