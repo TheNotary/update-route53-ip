@@ -3,7 +3,6 @@ import sys
 import configparser
 from pathlib import Path
 
-
 def read_configs():
     path = _locateConfigFile()
     config_path = os.path.abspath(path)
