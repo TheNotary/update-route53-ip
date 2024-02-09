@@ -1,0 +1,44 @@
+name: Build Debian Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package Version'
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build Debian Package (ARM architecture)
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/arm/v7
+          load: true
+          tags: temp-image:latest
+          build-args:
+            VERSION: ${{ github.event.inputs.version }}
+
+      - name: Create Artifact Directory
+        run: mkdir -p artifacts
+
+      - name: Copy Debian Package to Artifact Directory
+        run: cp ${PKG_NAME}_${{ github.event.inputs.version }}_all.deb artifacts/
+
+      - name: Upload Debian Package
+        uses: actions/upload-artifact@v2
+        with:
+          name: debian-package
+          path: artifacts/

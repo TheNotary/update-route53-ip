@@ -19,7 +19,7 @@ rm "${PKG_NAME}_${VERSION}_all.deb"
 
 # Build the package
 fpm -s dir -t deb -n ${PKG_NAME} -v ${VERSION} \
-    -a all \
+    -a armv6l \
     --description "Update Route53 IP service" \
     --prefix /opt/${PKG_NAME} \
     --depends python3-boto3 \
@@ -32,3 +32,6 @@ fpm -s dir -t deb -n ${PKG_NAME} -v ${VERSION} \
     ./packaging/config_template=config
 
     # ./venv \
+
+
+# -a all \

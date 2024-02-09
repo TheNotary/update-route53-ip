@@ -1,0 +1,9 @@
+packaging/config
+.env
+
+Dockerfile
+venv/
+README.md
+*.deb
+.pytest_cache
+.git
