@@ -1,4 +1,7 @@
 .env
-venv/
+python/venv/
 *.deb
 packaging/config
+
+**/dist
+**/*.egg-info

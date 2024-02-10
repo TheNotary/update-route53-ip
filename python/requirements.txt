@@ -1,6 +1,8 @@
 boto3
 requests
 
+build
+setuptools_scm
 pytest
 pytest-mock
 requests-mock

@@ -2,7 +2,7 @@
 
 This script is meant to run from one of the VMs on the basement cloud, or ideally the k8s server.
 
-It's a python3 script that runs via systemd and uses boto3 to interact with AWS Route53 based on credentials which should be collected at install time and populated in `/etc/update-route53-ip/config`.  
+It's a python3 script that runs via systemd and uses boto3 to interact with AWS Route53 based on credentials which should be collected at install time and populated in `/etc/update-route53-ip/config`.
 
 
 ## Dependencies
@@ -16,12 +16,28 @@ gem install fpm
 
 ## Development Testing the Script
 
+All of the python related command should be done within the `python` folder which encapsulates most of the python app.
+
 ```
+cd python
+
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-python update_route53_ip.py
+python update-route53-ip/main.py
+```
+
+## Build the Pip Package (academic)
+
+```
+python -m build
+```
+
+## Run the Tests
+
+```
+pytest
 ```
 
 ## Credentials
@@ -31,7 +47,7 @@ The credentials are generated in the terraform-aws.  They're named automated_tf,
 
 ## Deploy
 
-This service is tested against Raspbian.  
+This service is tested against Raspbian.
 
 ###### Steps:
 - build the deb package locally
@@ -44,3 +60,4 @@ scp update-route53-ip_1.0.0_all.deb target:/home/username/
 ssh target
 dpkg -i update-route53-ip_1.0.0_all.deb
 ```
+

@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='update_route53_ip',
-    version='1.0.0',
+    use_scm_version=True,  # Use setuptools_scm to get the version from the git tag
     description='Keeps Route53 up to date.',
     author='TheNotary',
     author_email='no@email.plz',

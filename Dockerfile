@@ -1,20 +1,17 @@
-# Adapt the base image to your needs
-FROM arm32v7/ubuntu:latest
+FROM ruby:latest
 
-WORKDIR /build
+RUN gem install fpm
 
-COPY . /build
-
-# Install any dependencies your script might need
 RUN apt-get update && apt-get install -y \
-    # Your dependencies here \
     python3 \
     && rm -rf /var/lib/apt/lists/*
 
+WORKDIR /build
+COPY . /build
+
+ARG PKG_NAME
+ARG DESCRIPTION
 ARG VERSION
-RUN chmod +x build_package.sh && ./build_package.sh $VERSION
+ARG ARCHITECTURE=all
 
-# Adjust PKG_NAME as needed
-ENV PKG_NAME=your_package_name
-
-CMD ["sh", "-c", "cp ${PKG_NAME}_${VERSION}_all.deb /build/artifacts/"]
+RUN ./build_package.sh

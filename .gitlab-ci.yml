@@ -1,0 +1,123 @@
+variables:
+  PKG_NAME: ${CI_PROJECT_NAME}
+  ARCHITECTURE: all
+  DESCRIPTION: A package to update Route53 IP service
+
+.if-package-changed: &if-package-changed
+  only:
+    refs: ['main']
+    changes:
+      - .gitlab-ci.yml
+      - 'Dockerfile'
+      - build_package.sh
+      - packaging/*
+      - '*.{py,sh,json,js}'
+
+.on-release-tag: &on-release-tag
+  rules:
+  - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$/'
+    when: never
+  - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
+
+.docker-build-artifact-script: &docker-build-artifact-script
+  stage: build
+  image: docker:latest
+  services:
+    - docker:25.0-dind
+  variables:
+    DOCKER_DRIVER: overlay2
+  script:
+  - printf "${PKG_NAME}_$( cat version| sed 's/^v//' )_${ARCHITECTURE}.deb" > bad_package_file_name
+  - docker build .
+      --build-arg="PKG_NAME=${PKG_NAME}"
+      --build-arg="VERSION=$(cat version)"
+      --build-arg="ARCHITECTURE=${ARCHITECTURE}"
+      --build-arg="DESCRIPTION=${DESCRIPTION}"
+      -t temp-build-image-${PKG_NAME}
+  - docker cp $(docker create temp-build-image-${PKG_NAME}):/build/$(cat bad_package_file_name) .
+  - "[ -z ${CI_COMMIT_TAG} ] || mv $(cat bad_package_file_name) ${PKG_NAME}_${CI_COMMIT_TAG}_${ARCHITECTURE}.deb"
+  after_script:
+  - echo "BUILD_JOB_ID=$CI_JOB_ID" >> job.env
+  artifacts:
+    paths:
+    - ${PKG_NAME}_*.deb
+    # - bad_package_file_name
+    # - ${PKG_NAME}_${VERSION}_${ARCHITECTURE}.deb
+    reports:
+      dotenv: job.env
+
+.docker-release-script: &docker-release-script
+  stage: build
+  image: docker:latest
+  services:
+    - docker:25.0-dind
+  variables:
+    DOCKER_DRIVER: overlay2
+  script:
+  - 'CONTAINER_NAME=$(basename "${PWD}")'
+  - docker --version
+  - echo ${CI_REGISTRY_PASSWORD} | docker login -u ${CI_REGISTRY_USER} --password-stdin ${CI_REGISTRY}
+  - docker build . -t ${CI_REGISTRY_IMAGE}/${CONTAINER_NAME}:${CI_COMMIT_SHA}
+  - docker push ${CI_REGISTRY_IMAGE}/${CONTAINER_NAME}:${CI_COMMIT_SHA}
+  - docker tag ${CI_REGISTRY_IMAGE}/${CONTAINER_NAME}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}/${CONTAINER_NAME}:latest
+  - docker push ${CI_REGISTRY_IMAGE}/${CONTAINER_NAME}:latest
+  - '[ -z "${CI_COMMIT_TAG_MESSAGE}" ] || (docker tag ${CI_REGISTRY_IMAGE}/${CONTAINER_NAME}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}/${CONTAINER_NAME}:${CI_COMMIT_TAG_MESSAGE} && docker push ${CI_REGISTRY_IMAGE}/${CONTAINER_NAME}:${CI_COMMIT_TAG_MESSAGE})'
+
+
+####################
+# Jobs Definitions #
+####################
+
+# docker-build-deploy:
+#   <<: *if-package-changed
+#   <<: *docker-release-script
+
+set-version:
+  stage: .pre
+  image: ${CI_REGISTRY}/thenotary/ci-library/builder
+  script:
+  - touch fallback_version build_version release_version
+  - printf "v0.0.0" > fallback_version
+    && printf "+${CI_COMMIT_SHA}" >> fallback_version
+  # Check for prior releases
+  - git ls-remote --sort v:refname origin 'refs/tags/v*.*.*'
+    | cut '-f2-' | sed 's/refs\/tags\///' | sed '/\^/d'
+    | sort -V | tail -n 1
+    | awk -F. '{print $1 "." $2 "." $3+1}' | tr -d '[:space:]' > build_version
+    && printf "+${CI_COMMIT_SHA}" >> build_version
+  # Check if this pipeline is running with a release tag
+  - printf "${CI_COMMIT_TAG}" | tr -d '[:space:]' > release_version
+  # Create the version file based on what's right
+  - "([[ -s release_version ]] && cat release_version > version) || ([[ -s build_version ]] && cat build_version > version) || ([[ -s fallback_version ]] && cat fallback_version > version)"
+  - echo "The version determined for this build was '$(cat version)'"
+  artifacts:
+    paths:
+    - version
+
+publish-build-of-debian-package:
+  <<: *if-package-changed
+  <<: *docker-build-artifact-script
+
+
+publish-release-of-debian-package:
+  stage: build
+  <<: *on-release-tag
+  <<: *docker-build-artifact-script
+
+
+create-release:
+  stage: deploy
+  <<: *on-release-tag
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  script: echo "running release"
+  release:
+    tag_name: '${CI_COMMIT_TAG}'
+    description: |
+      Run this download on a client:
+
+      curl -H 'PRIVATE-TOKEN: ${READ_ACCESS_TOKEN}' https://${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/jobs/${BUILD_JOB_ID}/artifacts/${PKG_NAME}_${CI_COMMIT_TAG}_${ARCHITECTURE}.deb > ${PKG_NAME}_${CI_COMMIT_TAG}_${ARCHITECTURE}.deb
+
+    assets:
+      links:
+        - name: '${PKG_NAME}_${CI_COMMIT_TAG}_${ARCHITECTURE}.deb'
+          url: '${CI_PROJECT_URL}/-/jobs/${BUILD_JOB_ID}/artifacts/raw/${PKG_NAME}_${CI_COMMIT_TAG}_${ARCHITECTURE}.deb?inline=false'
